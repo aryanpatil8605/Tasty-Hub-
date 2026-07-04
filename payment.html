@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payment – Tasty Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ── PAYMENT PAGE SPECIFIC ── */
+    .pay-wrap {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+    }
+    .pay-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .pay-header h1 { font-size: 1.7rem; font-weight: 800; }
+    .pay-header p  { color: var(--text-muted); font-size: 0.9rem; margin-top: 6px; }
+
+    /* order meta bar */
+    .order-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .order-meta .meta-item { font-size: 0.82rem; color: var(--text-muted); }
+    .order-meta .meta-item strong { color: var(--text-primary); display: block; font-size: 0.95rem; }
+    .order-meta .meta-amount strong { color: var(--orange); font-size: 1.3rem; }
+
+    /* ── DESKTOP QR CARD ── */
+    .desktop-pay {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .desktop-pay h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
+    .desktop-pay .sub { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 20px; }
+
+    .qr-box {
+      width: 220px; height: 220px;
+      background: #fff;
+      border-radius: 12px;
+      margin: 0 auto 16px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .qr-box canvas,
+    .qr-box img { width: 200px !important; height: 200px !important; display: block; }
+
+    .upi-copy-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+    }
+    .upi-copy-row .upi-val { font-weight: 700; font-size: 0.95rem; color: var(--orange); }
+    .copy-upi-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+    .copy-upi-btn:hover { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+    /* ── MOBILE UPI BUTTON ── */
+    .mobile-pay {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .mobile-pay .hint {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+    .upi-open-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #6c63ff, #8b5cf6);
+      color: #fff;
+      padding: 18px 24px;
+      border-radius: 14px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-shadow: 0 8px 28px rgba(108,99,255,0.4);
+      position: relative;
+      overflow: hidden;
+    }
+    .upi-open-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(108,99,255,0.55); }
+    .upi-open-btn:active { transform: scale(0.98); }
+    .upi-open-btn .btn-loader {
+      display: none;
+      width: 20px; height: 20px;
+      border: 3px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .upi-open-btn.loading .btn-loader { display: block; }
+    .upi-open-btn.loading .btn-text { opacity: 0.7; }
+
+    .upi-apps {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    .upi-app-tag {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+
+    /* ── RETURN / SUCCESS BANNER ── */
+    .return-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(76,175,80,0.15), rgba(76,175,80,0.08));
+      border: 1px solid rgba(76,175,80,0.4);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      font-size: 0.88rem;
+      color: var(--success);
+      text-align: center;
+      margin-bottom: 16px;
+      animation: fadeIn 0.5s ease;
+    }
+    .return-banner.show { display: block; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+
+    /* ── I'VE PAID BUTTON ── */
+    .paid-section { margin-top: 8px; }
+    .paid-section .paid-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .i-paid-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #25d366, #1ebe5b);
+      color: #fff;
+      padding: 17px 24px;
+      border-radius: 14px;
+      font-size: 1.05rem;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 8px 28px rgba(37,211,102,0.35);
+    }
+    .i-paid-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(37,211,102,0.5); }
+
+    /* ── STEPS ── */
+    .pay-steps {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px 18px;
+      margin-bottom: 20px;
+    }
+    .pay-steps h4 { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 12px; }
+    .pay-step {
+      display: flex; gap: 12px; align-items: flex-start;
+      margin-bottom: 10px; font-size: 0.86rem; color: var(--text-muted);
+    }
+    .pay-step:last-child { margin-bottom: 0; }
+    .sn {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--orange); color: #fff;
+      font-size: 0.7rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+
+    /* ── TRANSITIONS ── */
+    .fade-in { animation: fadeIn 0.4s ease both; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html" class="nav-logo">🍜 Tasty Hub</a>
+  <div class="nav-right">
+    <button class="cart-btn" onclick="window.location.href='checkout.html'">← Back</button>
+  </div>
+</nav>
+
+<div class="pay-wrap" id="payWrap">
+
+  <div class="pay-header">
+    <h1>💳 Payment</h1>
+    <p id="paySubtitle">Complete your payment to place the order</p>
+  </div>
+
+  <!-- ORDER META -->
+  <div class="order-meta fade-in">
+    <div class="meta-item">
+      <span>Order ID</span>
+      <strong id="metaOrderId">—</strong>
+    </div>
+    <div class="meta-item" style="text-align:right">
+      <span>Items</span>
+      <strong id="metaItems">—</strong>
+    </div>
+    <div class="meta-item meta-amount" style="text-align:right">
+      <span>Total Amount</span>
+      <strong id="metaTotal">₹0</strong>
+    </div>
+  </div>
+
+  <!-- RETURN SUCCESS BANNER -->
+  <div class="return-banner" id="returnBanner">
+    ✅ Payment app closed. If payment is complete, click <strong>"I've Paid"</strong> below.
+  </div>
+
+  <!-- ── DESKTOP: QR ── -->
+  <div class="desktop-pay fade-in" id="desktopPay" style="display:none">
+    <h2>Scan QR Code to Pay</h2>
+    <p class="sub">Open any UPI app, scan the code below and pay the exact amount shown.</p>
+    <div class="qr-box" id="qrBox"></div>
+    <div class="upi-copy-row">
+      <span class="upi-val" id="upiDisplay">aryanrakeshpatil8605@okicici</span>
+      <button class="copy-upi-btn" onclick="copyUPI()">📋 Copy UPI ID</button>
+    </div>
+    <p style="font-size:0.78rem;color:var(--text-muted);margin-top:4px">IDBI Bank · Aryan Patil</p>
+  </div>
+
+  <!-- ── MOBILE: UPI BUTTON ── -->
+  <div class="mobile-pay fade-in" id="mobilePay" style="display:none">
+    <p class="hint">Tap the button below to open your UPI app directly.<br>The amount is <strong style="color:var(--orange)" id="mobileAmount">₹0</strong> — it will be pre-filled automatically.</p>
+    <button class="upi-open-btn" id="upiOpenBtn" onclick="openUPIApp()">
+      <span class="btn-text">💳 Pay with Any UPI App</span>
+      <div class="btn-loader"></div>
+    </button>
+    <div class="upi-apps">
+      <span class="upi-app-tag">GPay</span>
+      <span class="upi-app-tag">PhonePe</span>
+      <span class="upi-app-tag">Paytm</span>
+      <span class="upi-app-tag">BHIM</span>
+      <span class="upi-app-tag">Any UPI App</span>
+    </div>
+  </div>
+
+  <!-- STEPS -->
+  <div class="pay-steps fade-in" id="paySteps"></div>
+
+  <!-- I'VE PAID -->
+  <div class="paid-section fade-in">
+    <p class="paid-label">After completing your payment, tap below to confirm your order via WhatsApp.</p>
+    <button class="i-paid-btn" onclick="handlePaid()">
+      ✅ I've Paid – Confirm via WhatsApp
+    </button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="script.js"></script>
+<script>
+  const UPI_ID      = 'aryanrakeshpatil8605@okicici';
+  const UPI_NAME    = 'Aryan%20Patil';
+  const WA_NUMBER   = '919665037501';
+
+  let grandTotal = 0;
+  let orderId    = '';
+
+  /* ── detect mobile ── */
+  function isMobile() {
+    return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent)
+      || window.innerWidth <= 768;
+  }
+
+  /* ── build UPI deep link ── */
+  function upiLink(amount, oid) {
+    return `upi://pay?pa=${UPI_ID}&pn=${UPI_NAME}&am=${amount}&cu=INR&tn=TastyHub-${oid}`;
+  }
+
+  /* ── copy UPI ID ── */
+  function copyUPI() {
+    navigator.clipboard.writeText(UPI_ID)
+      .then(() => showToast('UPI ID copied!', 'success'))
+      .catch(() => showToast('UPI ID: ' + UPI_ID));
+  }
+
+  /* ── open UPI app on mobile ── */
+  function openUPIApp() {
+    const btn = document.getElementById('upiOpenBtn');
+    btn.classList.add('loading');
+    const link = upiLink(grandTotal, orderId);
+    window.location.href = link;
+
+    // After 3s assume user switched to app — show return banner when they come back
+    setTimeout(() => {
+      btn.classList.remove('loading');
+    }, 3000);
+  }
+
+  /* detect page becoming visible again (user returned from UPI app) */
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && grandTotal > 0) {
+      document.getElementById('returnBanner').classList.add('show');
+    }
+  });
+
+  /* ── I've Paid → WhatsApp ── */
+  function handlePaid() {
+    const cart  = getCart();
+    const order = JSON.parse(localStorage.getItem('th_order') || '{}');
+    if (!cart.length || !order.name) {
+      showToast('Order not found. Please restart.', 'error'); return;
+    }
+    localStorage.setItem('th_orderid', orderId);
+    const itemLines = cart.map(i => `  • ${i.name} × ${i.qty} = ₹${i.price * i.qty}`).join('\n');
+    const msg = encodeURIComponent(
+`🍜 TASTY HUB ORDER
+
+Order ID: ${orderId}
+Customer: ${order.name}
+Phone: ${order.phone}
+Address: ${order.address}${order.landmark ? ', Near ' + order.landmark : ''}
+Location: ${order.location}
+
+Items:
+${itemLines}
+
+Total: ₹${grandTotal}
+Payment: Completed
+
+UPI Transaction ID: (please type here before sending)
+
+Please verify my payment and confirm my order. 🙏`
+    );
+    window.open(`https://wa.me/${WA_NUMBER}?text=${msg}`, '_blank');
+    setTimeout(() => { window.location.href = 'confirmation.html'; }, 800);
+  }
+
+  /* ── INIT ── */
+  document.addEventListener('DOMContentLoaded', () => {
+    const cart  = getCart();
+    const order = JSON.parse(localStorage.getItem('th_order') || '{}');
+
+    if (!cart.length || !order.name) {
+      document.getElementById('payWrap').innerHTML = `
+        <div style="text-align:center;padding:60px 20px">
+          <div style="font-size:3rem;margin-bottom:16px">⚠️</div>
+          <h2>No order found</h2>
+          <p style="color:var(--text-muted);margin:12px 0 24px">Please start from the menu.</p>
+          <a href="index.html" style="display:inline-block;padding:14px 32px;border-radius:50px;
+            background:linear-gradient(135deg,#ff6b00,#ff8c33);color:#fff;font-weight:700;text-decoration:none">
+            Go to Menu
+          </a>
+        </div>`;
+      return;
+    }
+
+    /* calculate totals */
+    const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+    const gst      = Math.round(subtotal * 0.05);
+    grandTotal     = subtotal + gst;
+    orderId        = 'TH-' + Math.floor(1000 + Math.random() * 9000);
+
+    localStorage.setItem('th_grand',   grandTotal);
+    localStorage.setItem('th_orderid', orderId);
+
+    /* fill meta bar */
+    document.getElementById('metaOrderId').textContent = orderId;
+    document.getElementById('metaItems').textContent   = cart.reduce((s,i)=>s+i.qty,0) + ' item(s)';
+    document.getElementById('metaTotal').textContent   = '₹' + grandTotal;
+    document.getElementById('mobileAmount').textContent = '₹' + grandTotal;
+
+    const mobile = isMobile();
+
+    if (mobile) {
+      /* ── MOBILE FLOW ── */
+      document.getElementById('mobilePay').style.display = 'block';
+      document.getElementById('paySubtitle').textContent = 'Tap below to open your UPI app instantly';
+      document.getElementById('paySteps').innerHTML = `
+        <h4>How it works</h4>
+        <div class="pay-step"><span class="sn">1</span><span>Tap "Pay with Any UPI App" — your app opens automatically</span></div>
+        <div class="pay-step"><span class="sn">2</span><span>The amount <strong style="color:var(--orange)">₹${grandTotal}</strong> is already filled in</span></div>
+        <div class="pay-step"><span class="sn">3</span><span>Authenticate and complete the payment in your UPI app</span></div>
+        <div class="pay-step"><span class="sn">4</span><span>Come back here and tap <strong>I've Paid</strong> to confirm via WhatsApp</span></div>`;
+    } else {
+      /* ── DESKTOP FLOW ── */
+      document.getElementById('desktopPay').style.display = 'block';
+      document.getElementById('paySubtitle').textContent  = 'Scan the QR code using any UPI app';
+      document.getElementById('upiDisplay').textContent   = UPI_ID;
+      document.getElementById('paySteps').innerHTML = `
+        <h4>How to pay</h4>
+        <div class="pay-step"><span class="sn">1</span><span>Open GPay, PhonePe, Paytm or any UPI app on your phone</span></div>
+        <div class="pay-step"><span class="sn">2</span><span>Scan the QR code — amount <strong style="color:var(--orange)">₹${grandTotal}</strong> is pre-filled</span></div>
+        <div class="pay-step"><span class="sn">3</span><span>Complete the payment and note your UPI Transaction ID</span></div>
+        <div class="pay-step"><span class="sn">4</span><span>Click <strong>I've Paid</strong> — WhatsApp opens with your order details ready to send</span></div>`;
+
+      /* generate QR */
+      new QRCode(document.getElementById('qrBox'), {
+        text: upiLink(grandTotal, orderId),
+        width: 200, height: 200,
+        colorDark: '#000000', colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
+  });
+</script>
+</body>
+</html>
