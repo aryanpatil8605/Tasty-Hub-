@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payment – Tasty Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="index.html" class="nav-logo">🍜 Tasty Hub</a>
+  <div class="nav-right">
+    <button class="cart-btn" onclick="window.location.href='checkout.html'">← Back</button>
+  </div>
+</nav>
+
+<div class="payment-page">
+  <div class="page-header" style="text-align:center">
+    <h1 style="font-size:1.8rem;font-weight:800">💳 Payment</h1>
+    <p style="color:var(--text-muted);margin-top:6px">Scan the QR code and complete your payment</p>
+  </div>
+
+  <div class="qr-card">
+    <h2>Scan & Pay via UPI</h2>
+    <p>Use any UPI app: GPay, PhonePe, Paytm, or any bank app</p>
+
+    <!-- QR CODE AREA -->
+    <div class="qr-img-wrap" id="qrWrap"></div>
+
+    <!-- UPI ID -->
+    <div class="upi-id-box">
+      <div>
+        <div class="upi-label">UPI ID</div>
+        <div class="upi-value" id="upiIdDisplay">yourupi@upi</div>
+      </div>
+      <button class="copy-btn" onclick="copyUPI()">📋 Copy</button>
+    </div>
+
+    <!-- AMOUNT -->
+    <div class="amount-display">
+      <div class="label">Total Amount to Pay</div>
+      <div class="amount" id="payAmount">₹0</div>
+    </div>
+
+    <!-- STEPS -->
+    <div class="payment-steps">
+      <h4>How to pay:</h4>
+      <div class="payment-step"><span class="step-num">1</span><span>Open any UPI app (GPay, PhonePe, Paytm)</span></div>
+      <div class="payment-step"><span class="step-num">2</span><span>Scan the QR code or use the UPI ID above</span></div>
+      <div class="payment-step"><span class="step-num">3</span><span>Enter the exact amount shown and complete payment</span></div>
+      <div class="payment-step"><span class="step-num">4</span><span>Note your UPI Transaction ID</span></div>
+      <div class="payment-step"><span class="step-num">5</span><span>Click "I've Paid" and send the WhatsApp message</span></div>
+    </div>
+
+    <button class="paid-btn" onclick="handlePaid()">
+      ✅ I've Paid – Send WhatsApp Message
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- QR Code generator library (browser-compatible) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="script.js"></script>
+<script>
+  const UPI_ID = 'aryanrakeshpatil8605@okicici';
+  const WHATSAPP_NUMBER = '919665037501';
+
+  document.getElementById('upiIdDisplay').textContent = UPI_ID;
+
+  function generateQR(amount) {
+    const qrWrap = document.getElementById('qrWrap');
+    // Clear previous content
+    qrWrap.innerHTML = '';
+    const upiLink = `upi://pay?pa=${UPI_ID}&pn=Aryan%20Patil&am=${amount}&cu=INR&tn=TastyHub%20Order`;
+    new QRCode(qrWrap, {
+      text: upiLink,
+      width: 200,
+      height: 200,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const cart = getCart();
+    const order = JSON.parse(localStorage.getItem('th_order') || '{}');
+
+    if (!cart.length || !order.name) {
+      document.querySelector('.payment-page').innerHTML = `
+        <div style="text-align:center;padding:60px 20px">
+          <div style="font-size:3rem;margin-bottom:16px">⚠️</div>
+          <h2>No order found</h2>
+          <p style="color:var(--text-muted);margin:12px 0 24px">Please start from the menu.</p>
+          <a href="index.html" style="display:inline-block;padding:14px 32px;border-radius:50px;background:linear-gradient(135deg,#ff6b00,#ff8c33);color:#fff;font-weight:700;text-decoration:none">Go to Menu</a>
+        </div>`;
+      return;
+    }
+
+    const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+    const gst = Math.round(subtotal * 0.05);
+    const grand = subtotal + gst;
+
+    // Show amount
+    document.getElementById('payAmount').textContent = '₹' + grand;
+    localStorage.setItem('th_grand', grand);
+
+    // Generate QR with exact amount embedded
+    generateQR(grand);
+  });
+
+  function copyUPI() {
+    navigator.clipboard.writeText(UPI_ID).then(() => {
+      showToast('UPI ID copied!', 'success');
+    }).catch(() => {
+      showToast('UPI ID: ' + UPI_ID);
+    });
+  }
+
+  function handlePaid() {
+    const cart = getCart();
+    const order = JSON.parse(localStorage.getItem('th_order') || '{}');
+    const grand = localStorage.getItem('th_grand') || '0';
+
+    if (!cart.length || !order.name) {
+      showToast('No order found. Please restart.', 'error'); return;
+    }
+
+    // Generate order ID
+    const orderId = 'TH-' + Math.floor(1000 + Math.random() * 9000);
+    localStorage.setItem('th_orderid', orderId);
+
+    // Build item list
+    const itemsList = cart.map(i => `  • ${i.name} × ${i.qty} = ₹${i.price * i.qty}`).join('%0A');
+
+    // Build WhatsApp message
+    const msg = encodeURIComponent(
+`🍜 NEW ORDER - TASTY HUB
+
+Order ID: ${orderId}
+Customer Name: ${order.name}
+Phone: ${order.phone}
+Delivery Address: ${order.address}${order.landmark ? ', Near ' + order.landmark : ''}
+Location: ${order.location}
+
+Items Ordered:
+${cart.map(i => `  • ${i.name} × ${i.qty} = ₹${i.price * i.qty}`).join('\n')}
+
+Total Amount: ₹${grand}
+Payment Status: Paid
+
+UPI Transaction ID: (please type your transaction ID here)
+
+Please verify my payment and confirm my order. 🙏`
+    );
+
+    // Save order for confirmation page
+    localStorage.setItem('th_orderid', orderId);
+
+    // Open WhatsApp
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, '_blank');
+
+    // Redirect to confirmation
+    setTimeout(() => {
+      window.location.href = 'confirmation.html';
+    }, 800);
+  }
+</script>
+</body>
+</html>
